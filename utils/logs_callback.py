@@ -58,7 +58,7 @@ def movingAverage(values, window):
     return np.convolve(values, weights, 'valid')
 
 
-def plot_experiment(experiment='UAVenv_cartesian_discrete'):
+def plot_experiment(experiment='UAVenv_discrete_cartesian'):
     csv_dir = './logs/{}/csv'.format(experiment)
     def plot_results(log_folder, title='Learning Curve'):
         """
