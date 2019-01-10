@@ -4,8 +4,8 @@ from stable_baselines import A2C
 from stable_baselines import DDPG
 from stable_baselines import PPO2
 from stable_baselines import TRPO
-from stable_baselines.common.policies import MlpPolicy, MlpLstmPolicy
 from stable_baselines.ddpg.policies import MlpPolicy as DDPGMlpPolicy
+from stable_baselines.common.policies import MlpPolicy, MlpLstmPolicy
 
 from uav_enviroment.UAV_Environment import UAVEnv
 from utils.evaluate_model import *
@@ -109,7 +109,7 @@ set_up_env = setup_env_cart_continuous
 #
 #
 
-
+from stable_baselines.common.policies import MlpPolicy, MlpLstmPolicy
 # parametrize("policy", ['cnn', 'lstm', 'lnlstm'])
 def train_a2c(seed):
     """
@@ -148,6 +148,7 @@ def train_a2c(seed):
     return evaluation
 
 
+from stable_baselines.common.policies import MlpPolicy, MlpLstmPolicy
 def train_a2c_recurrent(seed):
     """
     test A2C on the uav_env(cartesian,discrete)
