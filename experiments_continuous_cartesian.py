@@ -148,7 +148,7 @@ def train_a2c(seed):
     return evaluation
 
 
-from stable_baselines.common.policies import MlpPolicy, MlpLstmPolicy
+# from stable_baselines.common.policies import MlpPolicy, MlpLstmPolicy
 def train_a2c_recurrent(seed):
     """
     test A2C on the uav_env(cartesian,discrete)

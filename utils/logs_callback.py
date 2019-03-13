@@ -5,6 +5,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
+import scipy.signal as sp
+
+from matplotlib2tikz import save as tikz_save
 
 from stable_baselines.ddpg.policies import MlpPolicy
 from stable_baselines.common.vec_env.dummy_vec_env import DummyVecEnv
@@ -58,34 +61,102 @@ def movingAverage(values, window):
     return np.convolve(values, weights, 'valid')
 
 
+def rolling_window(a, window):
+    shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
+    strides = a.strides + (a.strides[-1],)
+    return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
+
+
+def rolling_average(values, window):
+    return np.mean(rolling_window(values, window), -1)
+
+
+def rolling_std(values, window):
+    return np.std(rolling_window(values, window), -1)
+
+
+def plot_results(log_folder, title='Learning Curve'):
+    """
+    plot the results
+
+    :param log_folder: (str) the save location of the results to plot
+    :param title: (str) the title of the task to plot
+    """
+    plt.figure(title)
+    plt.xlabel('Number of Timesteps')
+    plt.ylabel('Rewards')
+    plt.ylim([-5, 0.5])
+    plt.xlim([0, 3000000])
+    plt.title(title + " Smoothed")
+    for experiment_run in os.listdir(log_folder):
+        df = pd.read_csv(log_folder + '/' + experiment_run, skiprows=1)
+        x = df['l'].cumsum()
+        y = df['r']
+        y = movingAverage(y, window=700)
+        # Truncate x
+        print(title + '{:.5f} '.format(y[-60]) + experiment_run)
+        x = x[len(x) - len(y):]
+        plt.plot(x, y, label=experiment_run.replace(".csv", ""))
+
+    plt.hlines(0, xmin=0, xmax=np.max(x), linestyles='dashed')
+    plt.legend()
+    plt.show()
+
+
+def paper_plot_results(log_folder, title='Learning Curve'):
+    """
+    plot the results
+
+    :param log_folder: (str) the save location of the results to plot
+    :param title: (str) the title of the task to plot
+    """
+    window_size = 400
+    decimate_factor = 100
+
+    plt.figure(title)
+    plt.xlabel('Timesteps')
+    plt.ylabel('Reward')
+    plt.ylim([-9, 0.5])
+    plt.xlim([0, 980000])
+    # plt.title(title)
+    for experiment_run in os.listdir(log_folder):
+        df = pd.read_csv(log_folder + '/' + experiment_run, skiprows=1)
+        x = df['l'].cumsum()
+        y = df['r']
+        # y = movingAverage(y, window=window_size)
+
+        y_mean = rolling_average(y, window=window_size)
+        y_std = rolling_std(y, window=window_size)
+        x = x[:min(len(x), len(y_mean))]
+
+        # # Decimating
+        # x = sp.decimate(x,decimate_factor)
+        # y_mean = sp.decimate(y_mean,decimate_factor)
+        # y_std = sp.decimate(y_std,decimate_factor)
+
+        # Truncate x
+        # print(title+'{:.5f} '.format(y_mean[-60])+experiment_run)
+        # print(len(x))
+        # print(len(y_mean))
+
+        plt.plot(x, y_mean, label=experiment_run.replace(".csv", ""))
+        plt.fill_between(x, y1=y_mean - 0.5 * y_std, y2=y_mean + 0.5 * y_std, alpha=0.1)
+
+    plt.hlines(0, xmin=0, xmax=np.max(x), linestyles='dashed')
+    plt.legend()
+    # tikz_save('comparison_3M.tikz', figureheight='\\figureheight', figurewidth='\\figurewidth')
+    plt.show()
+
+
+
 def plot_experiment(experiment='UAVenv_discrete_cartesian'):
     csv_dir = './logs/{}/csv'.format(experiment)
-    def plot_results(log_folder, title='Learning Curve'):
-        """
-        plot the results
-
-        :param log_folder: (str) the save location of the results to plot
-        :param title: (str) the title of the task to plot
-        """
-        plt.figure(title)
-        plt.xlabel('Number of Timesteps')
-        plt.ylabel('Rewards')
-        plt.ylim([-5, 0.5])
-        plt.xlim([0, 3000000])
-        plt.title(title + " Smoothed")
-        for experiment_run in os.listdir(log_folder):
-            df = pd.read_csv(log_folder + '/' + experiment_run, skiprows=1)
-            x = df['l'].cumsum()
-            y = df['r']
-            y = movingAverage(y, window=700)
-            # Truncate x
-            print(title+'{:.5f} '.format(y[-60])+experiment_run)
-            x = x[len(x) - len(y):]
-            plt.plot(x, y, label=experiment_run.replace(".csv", ""))
-
-        plt.hlines(0, xmin=0, xmax=np.max(x), linestyles='dashed')
-        plt.legend()
-        plt.show()
-
     for i, experiment in enumerate(os.listdir(csv_dir)):
         plot_results(csv_dir + '/' + experiment, title=experiment)
+
+
+def paper_plot_experiment(experiment='UAVenv_discrete_cartesian'):
+    csv_dir = '{}/csv'.format(experiment)
+
+    experiment = 'Comparison'
+    paper_plot_results(csv_dir + '/' + experiment, title=experiment)
