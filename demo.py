@@ -5,6 +5,7 @@ from uav_enviroment.UAV_Environment import UAVEnv
 from utils.logs_callback import *
 
 from stable_baselines import A2C
+from stable_baselines import ACKTR
 from stable_baselines.common.policies import MlpPolicy
 
 NUM_CPU = 2
@@ -28,23 +29,31 @@ def setup_env_cart_discrete(seed):
 
 set_up_env = setup_env_cart_discrete
 
-algo = 'A2C'
-num_timesteps = 3000000
+algo = 'ACKTR'
+num_timesteps = 3000
 
 env = set_up_env(seed)
 
 global best_mean_reward, n_steps
 best_mean_reward, n_steps = -np.inf, 0
 
-# model = A2C(policy=MlpPolicy, env=env, gamma=0.99, n_steps=5, vf_coef=0.25,
-#             ent_coef=0.01, max_grad_norm=0.5, learning_rate=0.0007, alpha=0.99,
-#             epsilon=1e-05, lr_schedule='linear', verbose=1)
-#
-# model.learn(total_timesteps=num_timesteps, callback=callback, seed=seed,
-#             log_interval=500)
+"""
+ACKTR(policy, env, gamma=0.99, nprocs=1, n_steps=20, ent_coef=0.01, vf_coef=0.25,
+ vf_fisher_coef=1.0, learning_rate=0.25, max_grad_norm=0.5, kfac_clip=0.001,
+  lr_schedule='linear', verbose=0, tensorboard_log=None, _init_setup_model=True,
+   async_eigen_decomp=False, policy_kwargs=None, full_tensorboard_log=False)
+"""
 
-model = A2C.load('/home/daniel/Desktop/demo/gym/best_model.pkl')
-model.set_env(env)
+model = ACKTR(policy=MlpPolicy, env=env, gamma=0.99, nprocs=1, n_steps=20,
+              ent_coef=0.01, vf_coef=0.25, vf_fisher_coef=1.0, learning_rate=0.25,
+              max_grad_norm=0.5, kfac_clip=0.001, lr_schedule='linear', verbose=0,
+              tensorboard_log=None, _init_setup_model=True)
+
+model.learn(total_timesteps=num_timesteps, callback=callback, seed=seed,
+            log_interval=500)
+#
+# model = ACKTR.load('/home/daniel/Desktop/demo/gym/best_model.pkl')
+# model.set_env(env)
 
 images = []
 obs = model.env.reset()
@@ -60,4 +69,4 @@ for i in range(3000):
     # cv2.destroyAllWindows()
     model.env.render(mode='human')
 
-imageio.mimsave('uav_learning.gif', [img for i, img in enumerate(images) if i % 5 == 0], fps=60)
+# imageio.mimsave('uav_learning.gif', [img for i, img in enumerate(images) if i % 5 == 0], fps=60)
