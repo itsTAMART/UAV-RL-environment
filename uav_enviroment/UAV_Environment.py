@@ -29,9 +29,6 @@ import gym
 from gym import spaces
 from gym.utils import seeding, EzPickle
 
-# Rocket trajectory optimization is a classic topic in Optimal Control.
-#   TEXT EXPLAINING THE ENV
-#
 
 FPS = 50
 SCALE = 30.0  # affects how fast-paced the game is, forces should be adjusted as well
@@ -100,12 +97,6 @@ NUM_DISCRETE_ACTIONS = 5
 
 STATE_SIZE = 6
 
-# map_size_x = 200
-# map_size_y = 300
-# map_min_x = - map_size_x * 0.1
-# map_min_y = - map_size_y * 0.1
-# map_max_x = map_size_x * 1.1
-# map_max_y = map_size_y * 1.1
 threshold_distance = 40
 threshold_velocity = 4
 
@@ -124,9 +115,6 @@ FRAMES_PER_SECOND = 5
 SCALING_FACTOR = 4
 GAMMA = 0.99
 RENDER_EPISODE = 5
-
-
-
 
 
 # Helper Classes if needed
@@ -232,7 +220,7 @@ class UAVEnv(gym.Env):
 
         # IMPLEMENTED THE IMAGE AS PARTIAL OBSERVABILITY
         perception_shape = (IMAGE_HEIGTH, IMAGE_WIDTH, 3)
-        observation_shape = (OBS_IMAGE_HEIGTH,OBS_IMAGE_WIDTH,3)
+        observation_shape = (OBS_IMAGE_HEIGTH, OBS_IMAGE_WIDTH, 3)
         self.field_of_view = np.zeros(perception_shape, np.uint8)
 
         # State definition
@@ -264,7 +252,6 @@ class UAVEnv(gym.Env):
         else:
             self.action_space = spaces.Discrete(n_discrete_actions)
 
-
         # Define the action space either CONTINUOUS or DISCRETE.
         if self.angular_movement:
             ENV_OBS_LOWS = np.zeros(shape=self.get_angular_observation().shape)
@@ -282,9 +269,8 @@ class UAVEnv(gym.Env):
         else:
             self.observation_space = spaces.Box(low=ENV_OBS_LOWS, high=ENV_OBS_HIGH, dtype=np.float32)
 
-
-
-    def setup(self, *, map_size_x=map_size_x, map_size_y=map_size_y, n_obstacles=0, reset_always=True, max_timestep=1000,
+    def setup(self, *, map_size_x=map_size_x, map_size_y=map_size_y, n_obstacles=0, reset_always=True,
+              max_timestep=1000,
               threshold_dist=40, threshold_vel=4, reward_sparsity='dense'):
         self.map_size_x = map_size_x
         self.map_size_y = map_size_y
@@ -362,9 +348,6 @@ class UAVEnv(gym.Env):
         observation = self.get_observation()
         self.done = np.array([False])
 
-
-
-
         return observation
 
     # @profile
@@ -390,13 +373,9 @@ class UAVEnv(gym.Env):
         # Making sure action has the right size
         action = np.reshape(action, (action.size,))
         # Take the action
-        x = self.s['x'][0]
-        y = self.s['y'][0]
-        u = self.s['u'][0]
-        v = self.s['v'][0]
+        x, y, u, v, t_x, t_y = self.get_state()
 
         x_next, y_next, u_next, v_next = self._take_action(action, x, y, u, v)
-
 
         self.s['x'] = [x_next]
         self.s['y'] = [y_next]
@@ -419,7 +398,6 @@ class UAVEnv(gym.Env):
         #     if self.output_video is not None:
         #         self.output_video.write(img)
 
-
         # compute the reward
         reward = self._compute_reward()
         # has the game finished
@@ -437,14 +415,19 @@ class UAVEnv(gym.Env):
         """ method called to get the observation, override with the appropriate one """
         return self.get_angular_observation()
 
-    # @profile
-    def get_cartesian_observation(self):
+    def get_state(self):
         x = self.s['x'][0]
         y = self.s['y'][0]
         u = self.s['u'][0]
         v = self.s['v'][0]
         t_x = self.s['target_x'][0]
         t_y = self.s['target_y'][0]
+
+        return x, y, u, v, t_x, t_y
+
+    # @profile
+    def get_cartesian_observation(self):
+        x, y, u, v, t_x, t_y = self.get_state()
 
         dist = np.linalg.norm((t_x - x, t_y - y))
         clipped_dist = min(MAX_DIST, dist) / MAX_DIST
@@ -477,12 +460,7 @@ class UAVEnv(gym.Env):
         return np.concatenate(([dir_x, dir_y, vel_x, vel_y], p_vector))
 
     def get_angular_observation(self):
-        x = self.s['x'][0]
-        y = self.s['y'][0]
-        u = self.s['u'][0]
-        v = self.s['v'][0]
-        t_x = self.s['target_x'][0]
-        t_y = self.s['target_y'][0]
+        x, y, u, v, t_x, t_y = self.get_state()
         # This gets the angle between the direction of your speed and the direction of the target
         dist = min(MAX_DIST, np.linalg.norm((t_x - x, t_y - y))) / MAX_DIST
         theta = np.nan_to_num(angle_difference([x, y], [u, v], [t_x, t_y]))
@@ -532,15 +510,15 @@ class UAVEnv(gym.Env):
 
     # @profile
     def get_image_observation(self):
+        x, y, u, v, t_x, t_y = self.get_state()
+
         img = self.field_of_view.copy()
-        pos = np.array((self.s['x'][0], self.s['y'][0]))
-        half_window = np.array([IMAGE_WIDTH//2, IMAGE_HEIGTH//2])
+        pos = np.array((x, y))
+        half_window = np.array([IMAGE_WIDTH // 2, IMAGE_HEIGTH // 2])
 
         # Plot target
-        t_x = np.int(self.s['target_x'][0])
-        t_y = np.int(self.s['target_y'][0])
         target = np.array((t_x, t_y)) - pos + half_window
-        cv2.circle(img, tuple((target).astype(np.int)), self.threshold_dist, (0, 0, 255),thickness=-1)
+        cv2.circle(img, tuple((target).astype(np.int)), self.threshold_dist, (0, 0, 255), thickness=-1)
 
         # Plot obstacles
 
@@ -549,10 +527,10 @@ class UAVEnv(gym.Env):
             obstacle_in_image(img, obstacle, pos, half_window)
 
         # Plot the ship and velocity
-        u = np.int(self.s['u'][0]) * 4
-        v = np.int(self.s['v'][0]) * 4
-        cv2.circle(img, tuple(half_window), 4, (0, 255, 0),thickness=-1)
-        cv2.line(img, tuple(half_window), (IMAGE_WIDTH//2 + u, IMAGE_HEIGTH//2 + v), (0, 255, 0), 2)
+        u = u * 4
+        v = v * 4
+        cv2.circle(img, tuple(half_window), 4, (0, 255, 0), thickness=-1)
+        cv2.line(img, tuple(half_window), (IMAGE_WIDTH // 2 + u, IMAGE_HEIGTH // 2 + v), (0, 255, 0), 2)
 
         # # Print Equivalent
         # cv2.imshow('observation', img)
@@ -560,7 +538,7 @@ class UAVEnv(gym.Env):
         #
 
         img = cv2.resize(img, (OBS_IMAGE_HEIGTH, OBS_IMAGE_WIDTH))
-        #print('img')
+        # print('img')
         return img
 
     def _take_action(self, action):
@@ -580,7 +558,6 @@ class UAVEnv(gym.Env):
         v_next = r_next * np.sin(theta_next)
 
         return x_next, y_next, u_next, v_next
-
 
     def _cont_cartesian_action(self, action, x, y, u, v):
         """ continuous cartesian dynamics"""
@@ -654,12 +631,7 @@ class UAVEnv(gym.Env):
         # k8 = 0.03
         # # reward = -k1 * ((d2 + k4) * (1 + k2 * (min(k7 * v2 + k5, 0) / (k8 * d2 + k3)))) - k6
 
-        x = self.s['x'][0]
-        y = self.s['y'][0]
-        u = self.s['u'][0]
-        v = self.s['v'][0]
-        t_x = self.s['target_x'][0]
-        t_y = self.s['target_y'][0]
+        x, y, u, v, t_x, t_y = self.get_state()
 
         dist = np.float64(10000000)
         dist = min(dist, np.linalg.norm([x - t_x, y - t_y]))
@@ -849,6 +821,3 @@ class UAVEnv(gym.Env):
         self.obstacles.append(obstacle)
         self.obstacle_centers = np.array([obstacle.centroid.coords[0] for obstacle in self.obstacles])
         self.prep_obstacles = self.obstacles
-
-
-
