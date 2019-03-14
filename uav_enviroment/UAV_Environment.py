@@ -160,7 +160,8 @@ class UAVEnv(gym.Env):
 
     max_timestep = 1000
 
-    def __init__(self, continuous=True, angular_movement=True, observation_with_image=False, reset_always=True):
+    def __init__(self, continuous=True, angular_movement=True, observation_with_image=False, reset_always=True,
+                 controlled_speed=True):
         self.seed()
         self.viewer = None
 
@@ -169,7 +170,7 @@ class UAVEnv(gym.Env):
         self.angular_movement = angular_movement  # When True dynamics are modeled with steer and thrust, else they are modeled with dx, dy
         self.observation_with_image = observation_with_image  # When True return an image alongside the observation
         self.reset_always = reset_always  # When True change the environment origin, target and obstacles every time it resets.
-
+        self.controlled_speed = controlled_speed  # When True the task is to reach the target with a controlled speed, else is just reach the target
         # Shapely Speedups
         # if speedups.available:
         speedups.enable()
@@ -270,8 +271,8 @@ class UAVEnv(gym.Env):
             self.observation_space = spaces.Box(low=ENV_OBS_LOWS, high=ENV_OBS_HIGH, dtype=np.float32)
 
     def setup(self, *, map_size_x=map_size_x, map_size_y=map_size_y, n_obstacles=0, reset_always=True,
-              max_timestep=1000,
-              threshold_dist=40, threshold_vel=4, reward_sparsity='dense'):
+              max_timestep=1000, threshold_dist=40, threshold_vel=4, reward_sparsity='dense'):
+
         self.map_size_x = map_size_x
         self.map_size_y = map_size_y
         self.map_min_x = - map_size_x * 0.1
@@ -284,7 +285,7 @@ class UAVEnv(gym.Env):
         self.threshold_dist = threshold_dist
         self.threshold_vel = threshold_vel
         # TODO implement the sparse reward
-        # reward_sparsity = 'dense'
+        self.reward_sparsity = reward_sparsity
 
         if self.angular_movement:  # set the appropriate methods for the observation
             self.get_observation = self.get_angular_observation
@@ -304,6 +305,12 @@ class UAVEnv(gym.Env):
                 self._take_action = self._disc_angular_action  # Discrete angular
             else:
                 self._take_action = self._disc_cartesian_action  # Discrete cartesian
+
+        if self.reward_sparsity == 'dense':  # For dense reward
+            pass
+        elif self.reward_sparsity == 'sparse':
+            # TODO do reward sparse
+            pass
 
         self.generate_map()
 

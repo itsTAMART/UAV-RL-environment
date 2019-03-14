@@ -33,6 +33,12 @@ def create_perception_matrix(dist=PERCEPTION_DISTANCE, n_radius: int = 8, pts_p_
     return Z.reshape((2, -1)).T
 
 
+def create_perception_distances(max_dist=PERCEPTION_DISTANCE, n_radius: int = 16):
+    """Creates a vector of lines and check if they intersect with the obstacles"""
+    # TODO implement it
+    return None
+
+
 def unit_vector(vector):
     """ Returns the unit vector of the vector.  """
     return vector / np.linalg.norm(vector)
