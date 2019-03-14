@@ -19,8 +19,9 @@ def setup_env_cart_discrete(seed):
     :param seed: random seed
     :return: the environment
     """
-    env = UAVEnv(continuous=False, angular_movement=False, observation_with_image=False, reset_always=True)
-    env.setup(n_obstacles=3, reset_always=True, threshold_dist=20)
+    env = UAVEnv(continuous=False, angular_movement=False, observation_with_image=False, reset_always=True,
+                 controlled_speed=False)
+    env.setup(n_obstacles=3, reset_always=True, threshold_dist=20, reward_sparsity='dense')
     env.seed(seed)
     env = Monitor(env, log_dir, allow_early_resets=True)
     env = DummyVecEnv([lambda: env])
@@ -30,7 +31,7 @@ def setup_env_cart_discrete(seed):
 set_up_env = setup_env_cart_discrete
 
 algo = 'ACKTR'
-num_timesteps = 3000
+num_timesteps = 3000000
 
 env = set_up_env(seed)
 
@@ -57,16 +58,17 @@ model.learn(total_timesteps=num_timesteps, callback=callback, seed=seed,
 
 images = []
 obs = model.env.reset()
-img = model.env.render(mode='rgb_array')
+img = model.env.render(mode='human')
 
 for i in range(3000):
     images.append(img)
     action, _ = model.predict(obs)
     obs, _, _, _ = model.env.step(action)
-    #     img = model.env.render(mode='rgb_array')
-    #     cv2.imshow('image', img)
-    #     cv2.waitKey(0)
-    # cv2.destroyAllWindows()
-    model.env.render(mode='human')
+    img = model.env.render(mode='rgb_array')
+    cv2.imshow('image', img)
+    cv2.waitKey(0)
+cv2.destroyAllWindows()
+# if i % 20 == 0 :
+#     model.env.render(mode='human')
 
-# imageio.mimsave('uav_learning.gif', [img for i, img in enumerate(images) if i % 5 == 0], fps=60)
+imageio.mimsave('uav_learning.gif', [img for i, img in enumerate(images) if i % 5 == 0], fps=60)

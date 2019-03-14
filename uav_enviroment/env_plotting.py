@@ -103,7 +103,7 @@ def render_trajectory(env):
 
             plt.tight_layout(pad=.5)
             plt.draw()
-            plt.pause(0.0001)
+            plt.pause(0.000001)
     except (RuntimeError, TypeError, NameError):
 
         pass

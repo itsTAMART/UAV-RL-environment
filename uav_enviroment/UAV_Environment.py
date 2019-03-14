@@ -100,7 +100,7 @@ threshold_distance = 40
 threshold_velocity = 4
 
 N_OBSTACLES = 0  # Better keep it under 75 to speed up
-PERCEPTION_DISTANCE = 40
+PERCEPTION_DISTANCE = 60
 IMAGE_WIDTH = 300
 IMAGE_HEIGTH = 300
 
@@ -242,7 +242,7 @@ class UAVEnv(gym.Env):
             env_act_high = np.array([1, 1])
         else:
             # Perception matrix initialization, only with cartesian(dx,dy) dynamics.
-            self.perception_matrix = create_perception_matrix(dist=PERCEPTION_DISTANCE, n_radius=16, pts_p_radius=3)
+            self.perception_matrix = create_perception_matrix(dist=PERCEPTION_DISTANCE, n_radius=16, pts_p_radius=6)
             n_discrete_actions = 4  # +dx, -dx, +dy, -dy
             env_act_lows = np.array([-1, -1])  # dx and dy
             env_act_high = np.array([1, 1])
