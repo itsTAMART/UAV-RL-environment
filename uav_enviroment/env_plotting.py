@@ -53,12 +53,12 @@ def render_trajectory(env):
 
             plt.clf()
             plt.figure(1)
-            # gs = gridspec.GridSpec(8, 12)
-            #
-            # # Trajectory
-            # ax1 = plt.subplot(gs[:, 0:8])
-            ax1 = plt.subplot()
-            # ax1.set(title='Trajectory of the UAV')
+            gs = gridspec.GridSpec(8, 12)
+
+            # Trajectory
+            ax1 = plt.subplot(gs[:, 0:8])
+            # ax1 = plt.subplot()
+            ax1.set(title='Trajectory of the UAV')
             [plot_obstacle(obstacle) for obstacle in env.obstacles]
             plt.scatter(env.s['origin_x'], env.s['origin_y'], color='g', label='origin')
             plt.scatter(env.s['target_x'], env.s['target_y'], color='r', label='target')
@@ -69,30 +69,30 @@ def render_trajectory(env):
             plt.legend()
             plt.gca().set_aspect('equal', adjustable='box')
 
-            # # Speed and reward
-            # ax2 = plt.subplot(gs[:3, 8:])
-            #
-            # ax2.plot(x1, t['vel'], color='blue', label='speed')
-            # ax2.tick_params(axis='y', labelcolor='blue')
-            # ax2.set(xlabel='Speed and reward.')
-            # ax2.yaxis.set_label_position("right")
-            # plt.ylim(-1, MAX_VEL + 1)
-            # ax2.yaxis.tick_right()
-            # # ax2.legend()
-            #
-            # ax21 = ax2.twinx()  # instantiate a second axes that shares the same x-axis
-            # ax21.plot(x1, t['reward'], color='orange', label='reward')
-            # ax21.tick_params(axis='y', labelcolor='orange')
-            # ax21.set(ylabel='Reward')
-            # plt.ylim(-2, 1)
-            # # ax21.legend()
-            #
-            # # Cumulative Reward
-            # ax3 = plt.subplot(gs[3:6, 8:])
-            # ax3.plot(x1, dr_sum, 'k-', color='black', label='cumulative reward')
-            # ax3.set(xlabel='Cumulative Reward')
-            # ax3.yaxis.set_label_position("right")
-            # ax3.yaxis.tick_right()
+            # Speed and reward
+            ax2 = plt.subplot(gs[:3, 8:])
+
+            ax2.plot(x1, t['vel'], color='blue', label='speed')
+            ax2.tick_params(axis='y', labelcolor='blue')
+            ax2.set(xlabel='Speed and reward.')
+            ax2.yaxis.set_label_position("right")
+            plt.ylim(-1, MAX_VEL + 1)
+            ax2.yaxis.tick_right()
+            # ax2.legend()
+
+            ax21 = ax2.twinx()  # instantiate a second axes that shares the same x-axis
+            ax21.plot(x1, t['reward'], color='orange', label='reward')
+            ax21.tick_params(axis='y', labelcolor='orange')
+            ax21.set(ylabel='Reward')
+            plt.ylim(-2, 1)
+            # ax21.legend()
+
+            # Cumulative Reward
+            ax3 = plt.subplot(gs[3:6, 8:])
+            ax3.plot(x1, dr_sum, 'k-', color='black', label='cumulative reward')
+            ax3.set(xlabel='Cumulative Reward')
+            ax3.yaxis.set_label_position("right")
+            ax3.yaxis.tick_right()
 
             # # Last Results
             # ax4 = plt.subplot(gs[6:, 8:])

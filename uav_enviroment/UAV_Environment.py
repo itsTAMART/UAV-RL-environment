@@ -29,7 +29,6 @@ import gym
 from gym import spaces
 from gym.utils import seeding, EzPickle
 
-
 FPS = 50
 SCALE = 30.0  # affects how fast-paced the game is, forces should be adjusted as well
 
@@ -146,6 +145,7 @@ class UAVEnv(gym.Env):
     angular_movement = True  # When True dynamics are modeled with steer and thrust, else they are modeled with dx, dy
     observation_with_image = False  # When True return an image alongside the observation
     reset_always = True  # When True change the environment origin, target and obstacles every time it resets.
+    controlled_speed = True  # When True the task is to reach the target with a controlled speed, else is just reach the target
 
     map_size_x = 200
     map_size_y = 200
@@ -270,6 +270,11 @@ class UAVEnv(gym.Env):
         else:
             self.observation_space = spaces.Box(low=ENV_OBS_LOWS, high=ENV_OBS_HIGH, dtype=np.float32)
 
+        if self.controlled_speed:
+            self.reward_function = self._controlled_speed_reward()  # controlled speed reward
+        else:
+            self.reward_function = self._no_speed_reward()  # no speed reward
+
     def setup(self, *, map_size_x=map_size_x, map_size_y=map_size_y, n_obstacles=0, reset_always=True,
               max_timestep=1000, threshold_dist=40, threshold_vel=4, reward_sparsity='dense'):
 
@@ -305,12 +310,6 @@ class UAVEnv(gym.Env):
                 self._take_action = self._disc_angular_action  # Discrete angular
             else:
                 self._take_action = self._disc_cartesian_action  # Discrete cartesian
-
-        if self.reward_sparsity == 'dense':  # For dense reward
-            pass
-        elif self.reward_sparsity == 'sparse':
-            # TODO do reward sparse
-            pass
 
         self.generate_map()
 
@@ -406,7 +405,7 @@ class UAVEnv(gym.Env):
         #         self.output_video.write(img)
 
         # compute the reward
-        reward = self._compute_reward()
+        reward = self._reward_function()
         # has the game finished
         done = self.done
 
@@ -626,8 +625,14 @@ class UAVEnv(gym.Env):
             quad_offset = (0, 0)
         return quad_offset
 
+    def _reward_function(self):
+        """ method called to compute the reward based on which type of task it is:
+                eg: reach the target or reach it with controlled speed
+        """
+        return self._controlled_speed_reward()
+
     # @profile
-    def _compute_reward(self):
+    def _controlled_speed_reward(self):
         # k1 = 0.01
         # k2 = 1
         # k3 = 0.01
@@ -657,7 +662,8 @@ class UAVEnv(gym.Env):
         else:
             d2 = np.square(dist)
             v2 = np.square(vel)
-            reward = -0.01 * ((d2 + 1) * (1 + 1 * (min(3 * v2 - 80, 0) / (0.03 * d2 + 0.01)))) - 80
+            reward = (-0.01 * (
+                        (d2 + 1) * (1 + 1 * (min(3 * v2 - 80, 0) / (0.03 * d2 + 0.01)))) - 80) * self.dense_reward
         # Max Timestep
         if self.total_timestep >= self.max_timestep:
             reward -= TIME_NEGATIVE_REWARD
@@ -699,6 +705,69 @@ class UAVEnv(gym.Env):
             #                reset_always=True,
             #                max_timestep=int(self.max_timestep * 1.1),
             #                threshold_dist=20)
+
+            self.n_done = 0
+            self.oo_time = 0
+            self.oob = 0
+
+        # Printing functions
+
+        self.trajectory['vel'].append(vel)
+        self.trajectory['dist'].append(dist)
+        self.trajectory['reward'].append(reward)
+
+        return reward
+
+    def _no_speed_reward(self):
+
+        x, y, u, v, t_x, t_y = self.get_state()
+
+        dist = np.float64(10000000)
+        dist = min(dist, np.linalg.norm([x - t_x, y - t_y]))
+        vel = np.linalg.norm(np.array([u, v]))
+
+        # Reward in base of distance
+        # if self.total_timestep % 20 == 0:
+        #     print('dist: ', np.array([dist]), ' vel: ', np.array([vel]))
+        reward = 0
+        if dist < self.threshold_dist:
+            reward = + POSITIVE_REWARD
+            self.done = np.array([True])
+            # print('Target Found')
+            self.n_done += 1
+            self.episode_success = True
+        else:
+            d2 = np.square(dist)
+            reward = (- 0.01 * (d2 + 1) - 80) * self.dense_reward
+        # Max Timestep
+        if self.total_timestep >= self.max_timestep:
+            reward -= TIME_NEGATIVE_REWARD
+            self.oo_time += 1
+            self.done = np.array([True])
+            # print('Timeout')
+
+        # Out of bounds check
+        if x < self.map_min_x or y < self.map_min_y or x > self.map_max_x or y > self.map_max_y:
+            reward += -OUT_OF_BOUNDS_REWARD
+            self.oob += 1
+            self.done = np.array([True])
+            # print('Out of Bounds')
+
+        # COLLISIONS check
+        for obstacle in IT.compress(self.prep_obstacles, self.culled):
+            if sv.contains(obstacle, x=x, y=y):
+                reward += -OUT_OF_BOUNDS_REWARD
+                # print('Crash')
+                self.oob += 1
+                self.done = np.array([True])
+                break
+
+        reward = reward / REWARD_NORMALIZATION_FACTOR
+        # print(reward)
+
+        if self.episode % 1000 == 0 and self.total_timestep == 1:
+            print('Episode ', self.episode)
+            print('good = ', self.n_done, ', timeouts = ', self.oo_time, ', OoBounds = ', self.oob)
 
             self.n_done = 0
             self.oo_time = 0
