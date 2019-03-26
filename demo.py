@@ -21,7 +21,7 @@ def setup_env_cart_discrete(seed):
     """
     env = UAVEnv(continuous=False, angular_movement=False, observation_with_image=False, reset_always=True,
                  controlled_speed=False)
-    env.setup(n_obstacles=3, reset_always=True, threshold_dist=20, reward_sparsity='dense')
+    env.setup(n_obstacles=6, reset_always=True, threshold_dist=20, reward_sparsity='dense')
     env.seed(seed)
     env = Monitor(env, log_dir, allow_early_resets=True)
     env = DummyVecEnv([lambda: env])
@@ -45,20 +45,20 @@ ACKTR(policy, env, gamma=0.99, nprocs=1, n_steps=20, ent_coef=0.01, vf_coef=0.25
    async_eigen_decomp=False, policy_kwargs=None, full_tensorboard_log=False)
 """
 
-model = ACKTR(policy=MlpPolicy, env=env, gamma=0.99, nprocs=1, n_steps=20,
-              ent_coef=0.01, vf_coef=0.25, vf_fisher_coef=1.0, learning_rate=0.25,
-              max_grad_norm=0.5, kfac_clip=0.001, lr_schedule='linear', verbose=0,
-              tensorboard_log=None, _init_setup_model=True)
-
-model.learn(total_timesteps=num_timesteps, callback=callback, seed=seed,
-            log_interval=500)
+# model = ACKTR(policy=MlpPolicy, env=env, gamma=0.99, nprocs=1, n_steps=20,
+#               ent_coef=0.01, vf_coef=0.25, vf_fisher_coef=1.0, learning_rate=0.25,
+#               max_grad_norm=0.5, kfac_clip=0.001, lr_schedule='linear', verbose=0,
+#               tensorboard_log=None, _init_setup_model=True)
 #
-# model = ACKTR.load('/home/daniel/Desktop/demo/gym/best_model.pkl')
-# model.set_env(env)
+# model.learn(total_timesteps=num_timesteps, callback=callback, seed=seed,
+#             log_interval=500)
+
+model = ACKTR.load('/tmp/gym/best_model.pkl')
+model.set_env(env)
 
 images = []
 obs = model.env.reset()
-img = model.env.render(mode='human')
+img = model.env.render(mode='rgb_array')
 
 for i in range(3000):
     images.append(img)

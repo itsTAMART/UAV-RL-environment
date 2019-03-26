@@ -536,7 +536,7 @@ class UAVEnv(gym.Env):
         u = u * 4
         v = v * 4
         cv2.circle(img, tuple(half_window), 4, (0, 255, 0), thickness=-1)
-        cv2.line(img, tuple(half_window), (IMAGE_WIDTH // 2 + u, IMAGE_HEIGTH // 2 + v), (0, 255, 0), 2)
+        cv2.line(img, tuple(half_window), (int(IMAGE_WIDTH // 2 + u), int(IMAGE_HEIGTH // 2 + v)), (0, 255, 0), 2)
 
         # # Print Equivalent
         # cv2.imshow('observation', img)
