@@ -29,6 +29,7 @@ import gym
 from gym import spaces
 from gym.utils import seeding, EzPickle
 
+
 FPS = 50
 SCALE = 30.0  # affects how fast-paced the game is, forces should be adjusted as well
 
@@ -243,6 +244,7 @@ class UAVEnv(gym.Env):
         else:
             # Perception matrix initialization, only with cartesian(dx,dy) dynamics.
             self.perception_matrix = create_perception_matrix(dist=PERCEPTION_DISTANCE, n_radius=16, pts_p_radius=6)
+            self.perception_ray_points = create_perception_distance_points(max_dist=PERCEPTION_DISTANCE, n_radius=16)
             n_discrete_actions = 4  # +dx, -dx, +dy, -dy
             env_act_lows = np.array([-1, -1])  # dx and dy
             env_act_high = np.array([1, 1])
@@ -446,6 +448,17 @@ class UAVEnv(gym.Env):
         vel_x = np.nan_to_num((u / (vel + 1e-6)) * clipped_vel)
         vel_y = np.nan_to_num((v / (vel + 1e-6)) * clipped_vel)
 
+        # p_vector = self.grid_collisions_perception(x, y)
+        p_vector = self.ray_collision_perception((x, y))
+        # print('rays: {}'.format(p_vector))
+
+        # if self.total_timestep % 20 == 0:
+        #     print('state =        {0:.2f}, {1:.2f}, {2:.2f}, {3:.2f}, {4:.2f}, {5:.2f}'.format(x, y, u, v, t_x, t_y))
+        #     print('observations = {0:.2f}, {1:.2f}, {2:.2f}, {3:.2f}'.format(dir_x, dir_y, vel_x, vel_y))
+
+        return np.concatenate(([dir_x, dir_y, vel_x, vel_y], p_vector))
+
+    def grid_collisions_perception(self, x, y):
         point = np.array([x, y]).reshape((-1, 2))
         PER = self.perception_matrix + point
         p_vector = np.zeros(PER.size // 2)
@@ -459,11 +472,27 @@ class UAVEnv(gym.Env):
                 p_i = sv.contains(obstacle, x=PER[:, 0], y=PER[:, 1])
                 p_vector = np.logical_or(p_vector, p_i)
 
-        # if self.total_timestep % 20 == 0:
-        #     print('state =        {0:.2f}, {1:.2f}, {2:.2f}, {3:.2f}, {4:.2f}, {5:.2f}'.format(x, y, u, v, t_x, t_y))
-        #     print('observations = {0:.2f}, {1:.2f}, {2:.2f}, {3:.2f}'.format(dir_x, dir_y, vel_x, vel_y))
+        return p_vector
 
-        return np.concatenate(([dir_x, dir_y, vel_x, vel_y], p_vector))
+    def ray_collision_perception(self, position):
+        """
+
+        :param position: numpy array with the position of the agent
+        :return: a list with distances to the collision of each one of the rays
+        """
+        rays = create_perception_rays(position=position, points=self.perception_ray_points)
+        position_point = np.array(position).reshape((-1, 2))
+        # get only close objects to check the perception
+        if self.obstacles:
+            self.culled = fast_distance(position_point, self.obstacle_centers) < 3 * PERCEPTION_DISTANCE
+            for obstacle in IT.compress(self.prep_obstacles, self.culled):
+                # Vectorized
+                rays = [ray.difference(obstacle) for ray in rays]
+        # TODO test
+
+        # print('rays: {}'.format(rays))
+        return [(ray.length / PERCEPTION_DISTANCE) for ray in rays]
+
 
     def get_angular_observation(self):
         x, y, u, v, t_x, t_y = self.get_state()
@@ -690,7 +719,7 @@ class UAVEnv(gym.Env):
         reward = reward / REWARD_NORMALIZATION_FACTOR
         # print(reward)
 
-        if self.episode % 1000 == 0 and self.total_timestep == 1:
+        if self.episode % 500 == 0 and self.total_timestep == 1:
             print('Episode ', self.episode)
             print('good = ', self.n_done, ', timeouts = ', self.oo_time, ', OoBounds = ', self.oob)
             # # TODO remove in the future

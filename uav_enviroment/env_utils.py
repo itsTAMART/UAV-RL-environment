@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import collections
 import itertools as IT
-from shapely.geometry import Point, asPoint, asPolygon
+from shapely.geometry import Point, asPoint, asPolygon, LineString
 from shapely.geometry.polygon import Polygon
 from shapely import speedups
 import shapely.vectorized as sv
@@ -33,13 +33,23 @@ def create_perception_matrix(dist=PERCEPTION_DISTANCE, n_radius: int = 8, pts_p_
     return Z.reshape((2, -1)).T
 
 
-def create_perception_distances(max_dist=PERCEPTION_DISTANCE, n_radius: int = 16):
+def create_perception_distance_points(max_dist=PERCEPTION_DISTANCE, n_radius: int = 16):
     """Creates a vector of lines and check if they intersect with the obstacles"""
-    Z = np.zeros((2, n_radius))
+    Z = np.zeros((n_radius, 2))
     for i, angle in np.ndenumerate(np.arange(start=0, step=(2 / n_radius), stop=2)):
-        Z[0, i] = np.cos(np.pi * angle) * max_dist
-        Z[1, i] = np.sin(np.pi * angle) * max_dist
+        Z[i, 0] = np.cos(np.pi * angle) * max_dist
+        Z[i, 1] = np.sin(np.pi * angle) * max_dist
     return Z
+
+
+def create_perception_rays(position, points):
+    """
+    creates the lines that will serve as perception rays
+    :param position: numpy array of size (2,)with position
+    :param points: numpy array of size (n_rays, 2) with point coordinates relative to 0
+    :return: list with LineString objects from position to the position+point
+    """
+    return [LineString([position, point + position]) for point in points]
 
 
 def unit_vector(vector):
