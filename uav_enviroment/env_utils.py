@@ -20,7 +20,7 @@ from shapely.ops import cascaded_union
 from shapely.prepared import prep
 import copy
 
-PERCEPTION_DISTANCE = 40
+PERCEPTION_DISTANCE = 60
 
 def create_perception_matrix(dist=PERCEPTION_DISTANCE, n_radius: int = 8, pts_p_radius: int = 3):
     """Creates a matrix of offsets to add to the point and check if they intersect with the obstacles"""
@@ -35,8 +35,11 @@ def create_perception_matrix(dist=PERCEPTION_DISTANCE, n_radius: int = 8, pts_p_
 
 def create_perception_distances(max_dist=PERCEPTION_DISTANCE, n_radius: int = 16):
     """Creates a vector of lines and check if they intersect with the obstacles"""
-    # TODO implement it
-    return None
+    Z = np.zeros((2, n_radius))
+    for i, angle in np.ndenumerate(np.arange(start=0, step=(2 / n_radius), stop=2)):
+        Z[0, i] = np.cos(np.pi * angle) * max_dist
+        Z[1, i] = np.sin(np.pi * angle) * max_dist
+    return Z
 
 
 def unit_vector(vector):
