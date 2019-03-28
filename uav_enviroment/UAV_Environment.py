@@ -278,7 +278,7 @@ class UAVEnv(gym.Env):
             self.reward_function = self._no_speed_reward()  # no speed reward
 
     def setup(self, *, map_size_x=map_size_x, map_size_y=map_size_y, n_obstacles=0, reset_always=True,
-              max_timestep=1000, threshold_dist=40, threshold_vel=4, reward_sparsity='dense'):
+              max_timestep=1000, threshold_dist=40, threshold_vel=4, reward_sparsity=False):
 
         self.map_size_x = map_size_x
         self.map_size_y = map_size_y
@@ -291,8 +291,9 @@ class UAVEnv(gym.Env):
         self.max_timestep = max_timestep
         self.threshold_dist = threshold_dist
         self.threshold_vel = threshold_vel
-        # TODO implement the sparse reward
+        # True is sparse reward, False is a dense reward
         self.reward_sparsity = reward_sparsity
+        self.dense_reward = not reward_sparsity
 
         if self.angular_movement:  # set the appropriate methods for the observation
             self.get_observation = self.get_angular_observation

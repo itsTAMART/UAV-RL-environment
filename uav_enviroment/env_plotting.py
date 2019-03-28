@@ -52,7 +52,7 @@ def render_trajectory(env):
                 dr_sum[i + 1] = t['reward'][i + 1] + GAMMA * dr_sum[i]
 
             plt.clf()
-            plt.figure(1)
+            fig = plt.figure(1)
             gs = gridspec.GridSpec(8, 12)
 
             # Trajectory
@@ -102,8 +102,11 @@ def render_trajectory(env):
             # ax4.set_yticks([])
 
             plt.tight_layout(pad=.5)
-            plt.draw()
-            plt.pause(0.000001)
+            # plt.show()
+            # plt.draw()
+            # plt.pause(0.000001)
+
+            return fig
     except (RuntimeError, TypeError, NameError):
 
         pass
