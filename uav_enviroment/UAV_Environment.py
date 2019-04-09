@@ -148,6 +148,8 @@ class UAVEnv(gym.Env):
     reset_always = True  # When True change the environment origin, target and obstacles every time it resets.
     controlled_speed = True  # When True the task is to reach the target with a controlled speed, else is just reach the target
 
+    logging_episodes = 1000
+
     map_size_x = 200
     map_size_y = 200
     map_min_x = - map_size_x * 0.1
@@ -194,6 +196,7 @@ class UAVEnv(gym.Env):
         self.n_done = 0
         self.oo_time = 0
         self.oob = 0
+        self.crashes = 0
 
         # Rendering variables
         self.trajectory = copy.deepcopy(EMPTY_TRAJECTORY)
@@ -538,7 +541,7 @@ class UAVEnv(gym.Env):
 
             candidate_angles = np.array([left_angle, right_angle])
             crash_angle = candidate_angles[np.argmin(np.abs(candidate_angles))]
-            # sigue siendo un poco naive la implementacion pero coges el angulo mas grande para desviarte, danfo igual izquierda o derecha
+            # sigue siendo un poco naive la implementacion pero coges el angulo mas grande para desviarte, dando igual izquierda o derecha
             # dará problemas pero hay que encontrar una forma de manejar los angulos positivos de una forma y los negativos de otra.
         # print('crash angle: ', crash_angle, ' p_crash: ', p_crash)
 
@@ -658,7 +661,20 @@ class UAVEnv(gym.Env):
     def _reward_function(self):
         """ method called to compute the reward based on which type of task it is:
                 eg: reach the target or reach it with controlled speed
+
+        ALSO logging results
+
         """
+        if self.episode % self.logging_episodes == 0 and self.total_timestep == 1:
+            print('Episode ', self.episode)
+            print('good = ', self.n_done, ', timeouts = ', self.oo_time, ', OoBounds = ', self.oob, ', Crashes = ',
+                  self.crashes)
+
+            self.n_done = 0
+            self.oo_time = 0
+            self.oob = 0
+            self.crashes = 0
+
         return self._controlled_speed_reward()
 
     # @profile
@@ -713,32 +729,12 @@ class UAVEnv(gym.Env):
             if sv.contains(obstacle, x=x, y=y):
                 reward += -OUT_OF_BOUNDS_REWARD
                 # print('Crash')
-                self.oob += 1
+                self.crashes += 1
                 self.done = np.array([True])
                 break
 
         reward = reward / REWARD_NORMALIZATION_FACTOR
         # print(reward)
-
-        if self.episode % 500 == 0 and self.total_timestep == 1:
-            print('Episode ', self.episode)
-            print('good = ', self.n_done, ', timeouts = ', self.oo_time, ', OoBounds = ', self.oob)
-            # # TODO remove in the future
-            # if self.n_done < 15:
-            #     self.RENDER_FLAG = False
-            # if self.n_done > 35:
-            #     print('IT\'S RENDER TIMEEEE!!!! {}, {} obstacles'.format(self.episode, (self.n_obstacles + 1) ))
-            #     self.RENDER_FLAG = True
-            #     self.setup(map_size_x=int(self.map_size_x * 1.2),
-            #                map_size_y=int(self.map_size_y * 1.2),
-            #                n_obstacles=self.n_obstacles + 1,
-            #                reset_always=True,
-            #                max_timestep=int(self.max_timestep * 1.1),
-            #                threshold_dist=20)
-
-            self.n_done = 0
-            self.oo_time = 0
-            self.oob = 0
 
         # Printing functions
 
@@ -788,20 +784,12 @@ class UAVEnv(gym.Env):
             if sv.contains(obstacle, x=x, y=y):
                 reward += -OUT_OF_BOUNDS_REWARD
                 # print('Crash')
-                self.oob += 1
+                self.crashes += 1
                 self.done = np.array([True])
                 break
 
         reward = reward / REWARD_NORMALIZATION_FACTOR
         # print(reward)
-
-        if self.episode % 1000 == 0 and self.total_timestep == 1:
-            print('Episode ', self.episode)
-            print('good = ', self.n_done, ', timeouts = ', self.oo_time, ', OoBounds = ', self.oob)
-
-            self.n_done = 0
-            self.oo_time = 0
-            self.oob = 0
 
         # Printing functions
 
@@ -875,7 +863,8 @@ class UAVEnv(gym.Env):
 
     def generate_map(self):
         self.obstacles = []
-        [self.add_obstacle(self.generate_obstacle()) for _ in range(self.n_obstacles)]
+        for _ in range(self.n_obstacles):
+            self.add_obstacle(self.generate_obstacle())
         # Added these 2 lines to reduce number of polys and increase performance
         # self.obstacles = cascaded_union(self.obstacles)
         # self.prep_obstacles = [prep(polygon) for polygon in self.obstacles]

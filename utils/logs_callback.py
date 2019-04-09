@@ -40,8 +40,8 @@ def callback(_locals, _globals):
           # New best model, you could save the agent here
           if mean_reward > best_mean_reward:
               print(x[-1], 'timesteps')
-              print("Best mean reward: {:.2f} - Last mean reward per episode: {:.2f}".format(best_mean_reward,
-                                                                                             mean_reward))
+              print("Best mean reward: {:.2f} - Last mean reward per episode: {:.2f}".format(mean_reward,
+                                                                                             best_mean_reward))
               globals()['best_mean_reward'] = mean_reward
               # Example for saving best model
               print("Saving new best model")
