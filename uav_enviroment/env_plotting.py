@@ -32,7 +32,7 @@ MAX_DIST = 100
 MAX_VEL = 50
 
 
-# TODO make it faster
+
 def render_trajectory(env):
     try:
         GAMMA = 0.99
