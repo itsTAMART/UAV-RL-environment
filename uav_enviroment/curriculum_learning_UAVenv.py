@@ -4,6 +4,7 @@ from uav_enviroment.UAV_Environment import UAVEnv
 class Curriculum_UAVEnv(UAVEnv):
 
     curriculum = [
+        {'n_obstacles': 0, 'threshold_distance': 60},
         {'n_obstacles': 0, 'threshold_distance': 40},
         {'n_obstacles': 0, 'threshold_distance': 20},
         {'n_obstacles': 1, 'threshold_distance': 40},
@@ -19,8 +20,8 @@ class Curriculum_UAVEnv(UAVEnv):
 
     difficulty_level = 0
 
-    def __init__(self):
-        super().__init__()
+    # def __init__(self):
+    #     super().__init__()
 
     def reset(self):
         if self.is_next_difficulty():
@@ -29,7 +30,8 @@ class Curriculum_UAVEnv(UAVEnv):
                 if self.difficulty_level < len(self.curriculum) \
                 else self.curriculum[-1]
 
-            self.setup(n_obstacles=level['n_obstacles'],threshold_distance=level['threshold_distance'])
+            self.setup(n_obstacles=level['n_obstacles'], threshold_dist=level['threshold_distance'],
+                       reset_always=True, reward_sparsity=True)
             print('new level: {}'.format(level))
 
         return super().reset()

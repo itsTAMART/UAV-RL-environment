@@ -412,6 +412,19 @@ class UAVEnv(gym.Env):
 
         # compute the reward
         reward = self._reward_function()
+
+        # Result console logging
+        if self.episode % self.logging_episodes == 0 and self.total_timestep == 1:
+            print('Episode ', self.episode)
+            print('good = ', self.n_done, ', timeouts = ', self.oo_time,
+                  ', OoBounds = ', self.oob, ', Crashes = ', self.crashes)
+
+            self.n_done = 0
+            self.oo_time = 0
+            self.oob = 0
+            self.crashes = 0
+
+
         # has the game finished
         done = self.done
 
@@ -661,20 +674,7 @@ class UAVEnv(gym.Env):
     def _reward_function(self):
         """ method called to compute the reward based on which type of task it is:
                 eg: reach the target or reach it with controlled speed
-
-        ALSO logging results
-
         """
-        if self.episode % self.logging_episodes == 0 and self.total_timestep == 1:
-            print('Episode ', self.episode)
-            print('good = ', self.n_done, ', timeouts = ', self.oo_time, ', OoBounds = ', self.oob, ', Crashes = ',
-                  self.crashes)
-
-            self.n_done = 0
-            self.oo_time = 0
-            self.oob = 0
-            self.crashes = 0
-
         return self._controlled_speed_reward()
 
     # @profile
@@ -752,7 +752,7 @@ class UAVEnv(gym.Env):
         dist = min(dist, np.linalg.norm([x - t_x, y - t_y]))
         vel = np.linalg.norm(np.array([u, v]))
 
-        # Reward in base of distance
+        # Reward in base of the distance
         # if self.total_timestep % 20 == 0:
         #     print('dist: ', np.array([dist]), ' vel: ', np.array([vel]))
         reward = 0
