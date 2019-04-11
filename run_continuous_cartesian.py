@@ -1,6 +1,5 @@
 from utils.launcher import *
-from utils.evaluate_model import *
-from experiments_continuous_cartesian import *
+from experiments.experiments_continuous_cartesian import *
 
 print("Starting experiments with cartesian dynamics and continuous action space \n \n")
 results = run_experiments([
