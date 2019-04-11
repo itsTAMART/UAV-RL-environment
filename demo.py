@@ -49,16 +49,16 @@ if __name__ == '__main__':
        async_eigen_decomp=False, policy_kwargs=None, full_tensorboard_log=False)
     """
 
-    # model = ACKTR(policy=MlpPolicy, env=env, gamma=0.99, nprocs=1, n_steps=20,
-    #               ent_coef=0.01, vf_coef=0.25, vf_fisher_coef=1.0, learning_rate=0.25,
-    #               max_grad_norm=0.5, kfac_clip=0.001, lr_schedule='linear', verbose=0,
-    #               tensorboard_log=None, _init_setup_model=True)
+    model = ACKTR(policy=MlpPolicy, env=env, gamma=0.99, nprocs=1, n_steps=20,
+                  ent_coef=0.01, vf_coef=0.25, vf_fisher_coef=1.0, learning_rate=0.25,
+                  max_grad_norm=0.5, kfac_clip=0.001, lr_schedule='linear', verbose=0,
+                  tensorboard_log=None, _init_setup_model=True)
 
-    model = ACKTR.load('/tmp/gym/best_model.pkl')
-    model.set_env(env)
+    # model = ACKTR.load('/tmp/gym/best_model.pkl')
+    # model.set_env(env)
 
     model.learn(total_timesteps=num_timesteps, callback=callback, seed=seed,
-                log_interval=500)
+                log_interval=100)
 
 
     images = []

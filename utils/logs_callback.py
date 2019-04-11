@@ -50,6 +50,46 @@ def callback(_locals, _globals):
   return True
 
 
+def multi_callback(_locals, _globals):
+    """
+    Callback called at each step (for DQN an others) or after n steps (see ACER or PPO2)
+    :param _locals: (dict)
+    :param _globals: (dict)
+    """
+    global n_steps, best_mean_reward, log_dir
+
+    # Print stats every 1000 calls
+    if (n_steps + 1) % 1000 == 0:
+        seed = _locals['seed']
+        experiment_dir = log_dir + 'seed_{}/'.format(seed)
+        # Evaluate policy performance
+        x, y = ts2xy(load_results(experiment_dir), 'timesteps')
+        if len(x) > 0:
+            mean_reward = np.mean(y[-100:])
+
+            # New best model, you could save the agent here
+            if mean_reward > best_mean_reward:
+                print(x[-1], 'timesteps')
+                print("Best mean reward: {:.2f} - Last mean reward per episode: {:.2f}".format(mean_reward,
+                                                                                               best_mean_reward))
+                globals()['best_mean_reward'] = mean_reward
+                # Example for saving best model
+                print("Saving new best model")
+                _locals['self'].save(experiment_dir + 'best_model_{}_steps.pkl'.format(n_steps))
+
+        print("Saving checkpoint model")
+        _locals['self'].save(experiment_dir + 'model_{}_steps.pkl'.format(n_steps))
+
+    n_steps += 1
+    return True
+
+
+def tst_callback(_locals, _globals):
+    print(_locals)
+    print(_locals['seed'])
+    print(_globals)
+    return True
+
 def movingAverage(values, window):
     """
     Smooth values by doing a moving average
