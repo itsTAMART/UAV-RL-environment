@@ -1,4 +1,6 @@
 # from stable_baselines.common.policies import MlpPolicy, MlpLstmPolicy, MlpLnLstmPolicy
+import sys
+import os
 
 from stable_baselines import ACKTR
 from stable_baselines.common.policies import MlpPolicy
@@ -9,7 +11,6 @@ from utils.evaluate_model import *
 from utils.logs_callback import *
 
 SEED = 16
-NUM_CPU = 2
 EXPERIMENT_NATURE = 'UAVenv_discrete_cartesian'
 
 
@@ -41,3 +42,14 @@ def setup_env_curriculum_learning(seed, log_dir):
     env = Monitor(env, log_dir, allow_early_resets=True)
     env = DummyVecEnv([lambda: env])
     return env
+
+
+def experiment_ACKTR():
+    pass
+
+
+if __name__ == '__main__':
+    exp_type = sys.argv[1]
+    seed = sys.argv[2]
+
+    print('Starting experiment of type {} and seed {}'.format(exp_type, seed))
