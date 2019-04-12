@@ -29,7 +29,7 @@ from gym import spaces
 from gym.utils import seeding, EzPickle
 
 MAX_DIST = 100
-MAX_VEL = 20
+MAX_VEL = 15
 
 
 
@@ -53,10 +53,10 @@ def render_trajectory(env):
 
             plt.clf()
             fig = plt.figure(1)
-            gs = gridspec.GridSpec(12, 8)
+            gs = gridspec.GridSpec(16, 8)
 
             # Trajectory
-            ax1 = plt.subplot(gs[0:10, :])
+            ax1 = plt.subplot(gs[0:13, :])
             # ax1 = plt.subplot()
             ax1.set(title='Trajectory of the UAV')
             [plot_obstacle(obstacle) for obstacle in env.obstacles]
@@ -70,7 +70,7 @@ def render_trajectory(env):
             plt.gca().set_aspect('equal', adjustable='box')
 
             # Speed and reward
-            ax2 = plt.subplot(gs[10:, :])
+            ax2 = plt.subplot(gs[13:, :])
 
             ax2.plot(x1, t['vel'], color='blue', label='speed')
             ax2.tick_params(axis='y', labelcolor='blue')

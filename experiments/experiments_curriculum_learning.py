@@ -42,7 +42,8 @@ def setup_env_curriculum_learning(seed, log_dir):
     return env
 
 
-num_timesteps = 300000
+num_timesteps = 300000  # test with 300k
+# num_timesteps = 60000000 # 60M
 best_mean_reward, n_steps = -np.inf, 0
 
 if __name__ == '__main__':
