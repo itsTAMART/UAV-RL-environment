@@ -200,3 +200,17 @@ def paper_plot_experiment(experiment='UAVenv_discrete_cartesian'):
 
     experiment = 'Comparison'
     paper_plot_results(csv_dir + '/' + experiment, title=experiment)
+
+
+def get_trajectories(model, trajectory_dir, n_trajectories=100):
+    print('evaluating runs')
+    obs = model.env.reset()
+    for i in range(n_trajectories):
+        episode_done = [False]
+        while not episode_done[0]:
+            action, _ = model.predict(obs)
+            obs, r, episode_done, _ = model.env.step(action)
+            fig = model.env.render(mode='human')
+            if episode_done[0]:
+                print(i)
+                plt.savefig('{}run_{}_r{}.png'.format(trajectory_dir, i, r[0]))

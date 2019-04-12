@@ -32,11 +32,16 @@ class Curriculum_UAVEnv(UAVEnv):
 
             self.setup(n_obstacles=level['n_obstacles'], threshold_dist=level['threshold_distance'],
                        reset_always=True, reward_sparsity=True)
-            print('new level: {}'.format(level))
+            print('New level: {}'.format(level))
 
         return super().reset()
 
     def is_next_difficulty(self):
         """ Returns True if there have been more than 50% of successful episodes without crashes"""
-        return (self.n_done - (self.crashes+ self.oob)) > (self.logging_episodes / 2)
-
+        result = (self.n_done - (self.crashes + self.oob)) > (self.logging_episodes / 2)
+        if result:
+            self.n_done = 0
+            self.oo_time = 0
+            self.oob = 0
+            self.crashes = 0
+        return result
