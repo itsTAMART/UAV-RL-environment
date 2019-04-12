@@ -10,5 +10,5 @@ if __name__ == '__main__':
     time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     experiment_dir = './logs/Experiment_CurriculumLearning_{}/'.format(time)
     os.makedirs(experiment_dir, exist_ok=True)
-    
+
     pass

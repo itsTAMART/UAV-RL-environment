@@ -39,6 +39,7 @@ class Curriculum_UAVEnv(UAVEnv):
     def is_next_difficulty(self):
         """ Returns True if there have been more than 50% of successful episodes without crashes"""
         result = (self.n_done - (self.crashes + self.oob)) > (self.logging_episodes / 2)
+        # result = (self.n_done ) > (self.logging_episodes / 8) # For testing purposes
         if result:
             self.n_done = 0
             self.oo_time = 0
