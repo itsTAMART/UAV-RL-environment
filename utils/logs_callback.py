@@ -125,16 +125,16 @@ def plot_results(log_folder, title='Learning Curve'):
     plt.figure(title)
     plt.xlabel('Number of Timesteps')
     plt.ylabel('Rewards')
-    plt.ylim([-5, 0.5])
-    plt.xlim([0, 3000000])
+    # plt.ylim([-5, 0.5])
+    # plt.xlim([0, 3000000])
     plt.title(title + " Smoothed")
     for experiment_run in os.listdir(log_folder):
         df = pd.read_csv(log_folder + '/' + experiment_run, skiprows=1)
         x = df['l'].cumsum()
         y = df['r']
-        y = movingAverage(y, window=700)
+        y = movingAverage(y, window=3)
         # Truncate x
-        print(title + '{:.5f} '.format(y[-60]) + experiment_run)
+        # print(title + '{:.5f} '.format(y[-60]) + experiment_run)
         x = x[len(x) - len(y):]
         plt.plot(x, y, label=experiment_run.replace(".csv", ""))
 
@@ -150,14 +150,14 @@ def paper_plot_results(log_folder, title='Learning Curve'):
     :param log_folder: (str) the save location of the results to plot
     :param title: (str) the title of the task to plot
     """
-    window_size = 400
+    window_size = 2
     decimate_factor = 100
 
     plt.figure(title)
     plt.xlabel('Timesteps')
     plt.ylabel('Reward')
-    plt.ylim([-9, 0.5])
-    plt.xlim([0, 980000])
+    # plt.ylim([-9, 0.5])
+    # plt.xlim([0, 980000])
     # plt.title(title)
     for experiment_run in os.listdir(log_folder):
         df = pd.read_csv(log_folder + '/' + experiment_run, skiprows=1)
