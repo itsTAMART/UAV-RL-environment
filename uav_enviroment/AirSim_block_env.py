@@ -110,6 +110,9 @@ class Airsim_UAVEnv(UAVEnv):
 
     max_timestep = 1500
 
+    old_impact_x = 0
+    old_impact_y = 0
+
     def __init__(self):
         self.seed()
         self.viewer = None
@@ -199,15 +202,12 @@ class Airsim_UAVEnv(UAVEnv):
 
         ENV_OBS_LOWS = np.zeros(shape=self.get_cartesian_observation().shape)
         ENV_OBS_HIGH = np.ones(shape=self.get_cartesian_observation().shape)
-            # ENV_OBS_HIGH[0:6] = [self.map_max_x, self.map_max_y, MAX_VEL, MAX_VEL, self.map_max_x, self.map_max_y]
 
-        # self.observation_space = spaces.Box(low=ENV_OBS_LOWS, high=ENV_OBS_HIGH, dtype=np.float32)
 
 
         self.observation_space = spaces.Box(low=ENV_OBS_LOWS, high=ENV_OBS_HIGH, dtype=np.float32)
 
-
-        self.reward_function = self._no_speed_reward()  # no speed reward
+        self.reward_function = self._airsim_no_speed_reward  # no speed reward
 
 
     def setup(self, *, map_size_x=map_size_x, map_size_y=map_size_y, n_obstacles=0, reset_always=True,
@@ -324,11 +324,11 @@ class Airsim_UAVEnv(UAVEnv):
             self.generate_map()
             self.episode_success = False
 
-        # TODO test
+
         self.move_to(self.s['origin_x'][0], self.s['origin_y'][0])
 
         self.client.hover()
-        # TODO something to keep heigth
+
 
         # # Origin and target are modified in the generate map function
         # self.s['x'] = self.s['origin_x']
@@ -366,6 +366,7 @@ class Airsim_UAVEnv(UAVEnv):
         x, y, u, v, t_x, t_y = self.get_state()
 
         # TODO test
+        # TODO something to keep heigth
         # Take the action
         x_next, y_next, u_next, v_next = self._take_action(action, x, y, u, v)
 
@@ -464,7 +465,7 @@ class Airsim_UAVEnv(UAVEnv):
         u_next = np.clip(u_next, -lim_u, lim_u)  # Limit the max speed
         v_next = np.clip(v_next, -lim_v, lim_v)
 
-        self.client.moveByVelocity(u_next, v_next, 0, 10)
+        self.client.moveByVelocityZ(u_next, v_next, 7, 5)
 
         # print(quad_vel.x_val + quad_offset[0], quad_vel.y_val + quad_offset[1],0, 20)
         time.sleep(1 / FRAMES_PER_SECOND)
@@ -472,8 +473,7 @@ class Airsim_UAVEnv(UAVEnv):
 
         return x_next, y_next, u_next, v_next
 
-    # TODO check collisions
-    def _no_speed_reward(self):
+    def _airsim_no_speed_reward(self):
 
         x, y, u, v, t_x, t_y = self.get_state()
 
@@ -488,7 +488,7 @@ class Airsim_UAVEnv(UAVEnv):
         if dist < self.threshold_dist:
             reward = + POSITIVE_REWARD
             self.done = np.array([True])
-            # print('Target Found')
+            print('Target Found')
             self.n_done += 1
             self.episode_success = True
         else:
@@ -499,20 +499,36 @@ class Airsim_UAVEnv(UAVEnv):
             reward -= TIME_NEGATIVE_REWARD
             self.oo_time += 1
             self.done = np.array([True])
-            # print('Timeout')
+            print('Timeout')
 
         # Out of bounds check
         if x < self.map_min_x or y < self.map_min_y or x > self.map_max_x or y > self.map_max_y:
             reward += -OUT_OF_BOUNDS_REWARD
             self.oob += 1
             self.done = np.array([True])
-            # print('Out of Bounds')
+            print('Out of Bounds')
 
         # COLLISIONS check
+        # Impact point
+        impact = self.client.getCollisionInfo().impact_point
+
+        # TODO test
+        if impact.x_val != self.old_impact_x and impact.y_val != self.old_impact_y:
+            print(impact)
+            print('Crash by API')
+            self.old_impact_x = impact.x_val
+            self.old_impact_y = impact.y_val
+
+            reward += -OUT_OF_BOUNDS_REWARD
+            # print('Crash')
+            self.crashes += 1
+            self.done = np.array([True])
+
+
         for obstacle in IT.compress(self.prep_obstacles, self.culled):
             if sv.contains(obstacle, x=x, y=y):
+                print('Crash by Geometry')
                 reward += -OUT_OF_BOUNDS_REWARD
-                # print('Crash')
                 self.crashes += 1
                 self.done = np.array([True])
                 break
@@ -529,6 +545,7 @@ class Airsim_UAVEnv(UAVEnv):
         return reward
 
     def move_to(self, x, y):
+        print('Moving to {}, {}'.format(x, y))
         self.client.moveToZ(z=-15, velocity=7)
         time.sleep(0.1)
         self.client.moveToPosition(x=x, y=y, z=-15, velocity=30,
