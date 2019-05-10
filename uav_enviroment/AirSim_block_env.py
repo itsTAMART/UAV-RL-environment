@@ -195,7 +195,7 @@ class Airsim_UAVEnv(UAVEnv):
 
         # Define the action space either CONTINUOUS or DISCRETE.
 
-        self.action_space = spaces.Box(low=env_act_lows, high=env_act_high)
+        self.action_space = spaces.Discrete(n_discrete_actions)
 
         ENV_OBS_LOWS = np.zeros(shape=self.get_cartesian_observation().shape)
         ENV_OBS_HIGH = np.ones(shape=self.get_cartesian_observation().shape)
@@ -255,16 +255,19 @@ class Airsim_UAVEnv(UAVEnv):
 
             p1, p2, p3, p4 = [(x0, y0), (x0 + w, y0), (x0 + w, y0 + h), (x0, y0 + h)]
             # print([(x0, y0), (x0 + w, y0), (x0 + w, y0 + h), (x0, y0 + h)])
-            self.obstacles.append(asPolygon([p1, p2, p3, p4]))
+            self.add_obstacle(asPolygon([p1, p2, p3, p4]))
 
 
-        for obstacle in self.obstacles:
-            self.add_obstacle(obstacle)
+
+
         # Added these 2 lines to reduce number of polys and increase performance
         # self.obstacles = cascaded_union(self.obstacles)
         # self.prep_obstacles = [prep(polygon) for polygon in self.obstacles]
         self.prep_obstacles = self.obstacles
         self.generate_map()
+
+        self.s['origin_x'], self.s['origin_y'] = [35.], [117.39583333]  # Scaled old [0, 0]
+        self.s['target_x'], self.s['target_y'] = [35.], [117.39583333]  # Scaled old [0, 0]
 
         self.client = MultirotorClient()
         self.client.confirmConnection()
@@ -289,18 +292,18 @@ class Airsim_UAVEnv(UAVEnv):
 
         # TODO check if origin and target are inside []
         # self.obstacle_centers = np.array([obstacle.centroid.coords[0] for obstacle in self.obstacles])
-        if self.s['target_x']:
+        target = random.choice(scaled_objectives)
+        if self.s['target_x'][0]:
             self.s['origin_x'], self.s['origin_y'] = self.s['target_x'], self.s['target_y']
 
-            target = random.choice( scaled_objectives)
-            while target == [self.s['target_x'], self.s['target_y']]:
+            while target == [self.s['target_x'][0], self.s['target_y'][0]]:
                 target = random.choice(scaled_objectives)
 
-            self.s['target_x'], self.s['target_y'] = target
+            self.s['target_x'], self.s['target_y'] = [target[0]], [target[1]]
 
         else:
-            self.s['origin_x'], self.s['origin_y'] = 35. , 117.39583333 # Scaled old [0, 0]
-            self.s['target_x'], self.s['target_y'] = random.choice(scaled_objectives)
+            self.s['origin_x'], self.s['origin_y'] = [35.], [117.39583333]  # Scaled old [0, 0]
+            self.s['target_x'], self.s['target_y'] = [target[0]], [target[1]]
 
 
 
@@ -322,7 +325,7 @@ class Airsim_UAVEnv(UAVEnv):
             self.episode_success = False
 
         # TODO test
-        self.move_to(self.s['origin_x'], self.s['origin_y'])
+        self.move_to(self.s['origin_x'][0], self.s['origin_y'][0])
 
         self.client.hover()
         # TODO something to keep heigth
